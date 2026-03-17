@@ -1,0 +1,33 @@
+# --- Общие ---
+.idea/
+.vscode/
+*.log
+*.tmp
+*.swp
+
+# --- Python / backend ---
+traffsoft-backend/__pycache__/
+traffsoft-backend/**/__pycache__/
+traffsoft-backend/*.py[cod]
+traffsoft-backend/venv/
+traffsoft-backend/.mypy_cache/
+traffsoft-backend/.pytest_cache/
+traffsoft-backend/.coverage
+traffsoft-backend/htmlcov/
+
+# Среда / секреты
+traffsoft-backend/.env
+traffsoft-backend/.env.*
+
+# --- Node / frontend ---
+traffsoft-frontend/node_modules/
+traffsoft-frontend/dist/
+traffsoft-frontend/.npm/
+traffsoft-frontend/.cache/
+traffsoft-frontend/.env
+traffsoft-frontend/.env.*
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+desktop.ini
