@@ -1,11 +1,20 @@
 fastapi
 uvicorn[standard]
 
-SQLAlchemy
+SQLAlchemy[asyncio]
+greenlet
+asyncpg
+psycopg2-binary
+aiosqlite
 
 python-dotenv
 pydantic
 pydantic-settings
+email-validator
 
 python-jose[cryptography]
 passlib[bcrypt]
+
+alembic
+
+httpx

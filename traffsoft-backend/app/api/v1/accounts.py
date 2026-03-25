@@ -1,7 +1,8 @@
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.models.account import Account
@@ -11,39 +12,43 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[AccountRead])
-def list_accounts(
-    db: Session = Depends(get_db),
+async def list_accounts(
+    db: AsyncSession = Depends(get_db),
     status_filter: Optional[str] = Query(None, alias="status"),
     group_filter: Optional[str] = Query(None, alias="group"),
 ):
-    query = db.query(Account)
+    query = select(Account)
     if status_filter:
-        query = query.filter(Account.status == status_filter)
+        query = query.where(Account.status == status_filter)
     if group_filter:
-        query = query.filter(Account.group_name == group_filter)
-    return query.order_by(Account.id).all()
+        query = query.where(Account.group_name == group_filter)
+    query = query.order_by(Account.id)
+    result = await db.execute(query)
+    return result.scalars().all()
 
 
 @router.post("/", response_model=AccountRead, status_code=status.HTTP_201_CREATED)
-def create_account(payload: AccountCreate, db: Session = Depends(get_db)):
-    existing = db.query(Account).filter(Account.phone == payload.phone).first()
+async def create_account(payload: AccountCreate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Account).where(Account.phone == payload.phone))
+    existing = result.scalar_one_or_none()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Аккаунт с таким номером уже существует",
         )
-    account = Account(**payload.dict())
+    account = Account(**payload.model_dump())
     db.add(account)
-    db.commit()
-    db.refresh(account)
+    await db.commit()
+    await db.refresh(account)
     return account
 
 
 @router.delete("/{account_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_account(account_id: int, db: Session = Depends(get_db)):
-    account = db.query(Account).filter(Account.id == account_id).first()
+async def delete_account(account_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Account).where(Account.id == account_id))
+    account = result.scalar_one_or_none()
     if not account:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Аккаунт не найден")
-    db.delete(account)
-    db.commit()
-    return
+    await db.delete(account)
+    await db.commit()
+    return None

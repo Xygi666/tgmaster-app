@@ -1,0 +1,12 @@
+[railway]
+  builder = "dockerfile"
+  dockerfilePath = "Dockerfile"
+
+[railway.variables]
+  DATABASE_URL = "postgresql://<user>:<password>@<host>:<port>/<db>"
+
+[deploy]
+  healthcheckPath = "/health"
+  healthcheckTimeout = 30
+  restartPolicyType = "ON_FAILURE"
+  restartPolicyMaxRetries = 10
