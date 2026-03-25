@@ -36,10 +36,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.api.v1 import auth, accounts
+from app.api.v1 import auth, accounts, audience
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(accounts.router, prefix="/api/v1/accounts", tags=["accounts"])
+app.include_router(audience.router, tags=["audience"])
 
 frontend_dist = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(__file__))),

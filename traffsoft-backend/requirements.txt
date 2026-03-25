@@ -18,3 +18,5 @@ passlib[bcrypt]
 alembic
 
 httpx
+
+telethon
