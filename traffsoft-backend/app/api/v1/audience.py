@@ -3,6 +3,7 @@ import io
 import re
 from datetime import datetime
 from typing import Optional
+from pydantic import BaseModel
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -408,6 +409,40 @@ async def get_parse_progress(job_id: int, db: AsyncSession = Depends(get_db)):
         total_items=row[4],
         error_message=row[5],
     )
+
+
+@router.delete("/parse-jobs/{job_id}")
+async def delete_parse_job(job_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(ParseJob).where(ParseJob.id == job_id))
+    job = result.scalar_one_or_none()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job не найден")
+    await db.delete(job)
+    await db.commit()
+    return {"status": "deleted", "id": job_id}
+
+
+class BulkDeleteRequest(BaseModel):
+    job_ids: Optional[list[int]] = None
+    status: Optional[str] = None
+
+
+@router.post("/parse-jobs/bulk-delete")
+async def bulk_delete_jobs(payload: BulkDeleteRequest, db: AsyncSession = Depends(get_db)):
+    if not payload.job_ids and not payload.status:
+        raise HTTPException(status_code=400, detail="Укажите job_ids или status")
+
+    if payload.job_ids:
+        result = await db.execute(select(ParseJob).where(ParseJob.id.in_(payload.job_ids)))
+    else:
+        result = await db.execute(select(ParseJob).where(ParseJob.status == payload.status))
+
+    jobs = result.scalars().all()
+    count = len(jobs)
+    for job in jobs:
+        await db.delete(job)
+    await db.commit()
+    return {"deleted": count}
 
 
 # ---------- MEMBERS ----------

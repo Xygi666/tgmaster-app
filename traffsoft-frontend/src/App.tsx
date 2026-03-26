@@ -387,6 +387,8 @@ function ParsingSection({ onOpenAddSource, onOpenCreateJob, onOpenStats }: { onO
   const [loading, setLoading] = useState(false);
   const [memberFilters, setMemberFilters] = useState({ has_username: undefined as boolean | undefined, lang_codes: "", activity: "" });
   const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
+  const [selectedJobs, setSelectedJobs] = useState<Set<number>>(new Set());
+  const [jobsStatusFilter, setJobsStatusFilter] = useState<string>("all");
 
   const loadSources = useCallback(async () => {
     setLoading(true);
@@ -447,6 +449,50 @@ function ParsingSection({ onOpenAddSource, onOpenCreateJob, onOpenStats }: { onO
       await fetch(`${API_BASE}/api/v1/audience/sources/${id}`, { method: "DELETE" });
       loadSources();
     } catch {} finally { setDeleteLoading(null); }
+  };
+
+  const handleDeleteJob = async (id: number) => {
+    if (!confirm("Удалить задачу?")) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/audience/parse-jobs/${id}`, { method: "DELETE" });
+      if (res.ok) { setSelectedJobs(s => { const n = new Set(s); n.delete(id); return n; }); loadJobs(); }
+    } catch {}
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selectedJobs);
+    if (ids.length === 0) { alert("Выберите задачи"); return; }
+    if (!confirm(`Удалить ${ids.length} задач?`)) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/audience/parse-jobs/bulk-delete`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ job_ids: ids }),
+      });
+      if (res.ok) { setSelectedJobs(new Set()); loadJobs(); }
+    } catch {}
+  };
+
+  const handleBulkDeleteByStatus = async (status: string) => {
+    const matching = jobs.filter(j => j.status === status);
+    if (matching.length === 0) { alert(`Нет задач со статусом "${status}"`); return; }
+    if (!confirm(`Удалить ${matching.length} задач со статусом "${status}"?`)) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/audience/parse-jobs/bulk-delete`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) { setSelectedJobs(new Set()); loadJobs(); }
+    } catch {}
+  };
+
+  const toggleJobSelect = (id: number) => {
+    setSelectedJobs(s => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  };
+
+  const toggleAllJobs = () => {
+    const filtered = jobsStatusFilter === "all" ? jobs : jobs.filter(j => j.status === jobsStatusFilter);
+    if (selectedJobs.size === filtered.length) setSelectedJobs(new Set());
+    else setSelectedJobs(new Set(filtered.map(j => j.id)));
   };
 
   const handleExport = async (format: string) => {
@@ -519,23 +565,66 @@ function ParsingSection({ onOpenAddSource, onOpenCreateJob, onOpenStats }: { onO
       )}
 
       {tab === "jobs" && (
-        <div className="table-container">
-          <div className="table-header"><div className="table-title">Задачи парсинга ({jobs.length})</div>
-            <button className="btn btn-primary" onClick={onOpenCreateJob} style={{ fontSize: 13, padding: "6px 12px" }}><PlusIcon /> Новая задача</button>
+        <div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
+            <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+              {(["all", "completed", "failed", "running", "pending", "cancelled"] as const).map(s => {
+                const count = s === "all" ? jobs.length : jobs.filter(j => j.status === s).length;
+                return (
+                  <button key={s} className={`btn ${jobsStatusFilter === s ? "btn-primary" : "btn-secondary"}`}
+                    onClick={() => setJobsStatusFilter(s)} style={{ fontSize: 12, padding: "4px 10px" }}>
+                    {s === "all" ? `Все (${jobs.length})` : `${s} (${count})`}
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+              {selectedJobs.size > 0 && (
+                <button className="btn btn-secondary" onClick={handleBulkDelete} style={{ fontSize: 12, padding: "4px 10px", color: "#ef4444" }}>
+                  Удалить выбранные ({selectedJobs.size})
+                </button>
+              )}
+              <button className="btn btn-secondary" onClick={() => handleBulkDeleteByStatus("failed")} style={{ fontSize: 12, padding: "4px 10px" }}>
+                Удалить ошибки
+              </button>
+              <button className="btn btn-secondary" onClick={() => handleBulkDeleteByStatus("completed")} style={{ fontSize: 12, padding: "4px 10px" }}>
+                Удалить завершённые
+              </button>
+              <button className="btn btn-primary" onClick={onOpenCreateJob} style={{ fontSize: 13, padding: "6px 12px" }}><PlusIcon /> Новая задача</button>
+            </div>
           </div>
-          {loading ? <div style={{ padding: 20 }}>Загрузка...</div>
-          : jobs.length === 0 ? <div style={{ padding: 20, color: "#94a3b8" }}>Нет задач. Создайте первую.</div>
-          : <table><thead><tr><th>ID</th><th>Источник</th><th>Режим</th><th>Статус</th><th>Обработано</th><th>Новых</th><th>Создана</th><th>Завершена</th></tr></thead>
-            <tbody>{jobs.map(j => (
-              <tr key={j.id}>
-                <td>#{j.id}</td><td>{j.source_title || `#${j.source_id}`}</td>
-                <td><span style={{ fontSize: 12, background: "#1e293b", padding: "2px 6px", borderRadius: 4 }}>{j.mode}</span></td>
-                <td>{statusBadge(j.status)}</td>
-                <td>{j.processed_items.toLocaleString()}</td><td>{j.new_members.toLocaleString()}</td>
-                <td style={{ fontSize: 12 }}>{new Date(j.created_at).toLocaleString()}</td>
-                <td style={{ fontSize: 12 }}>{j.finished_at ? new Date(j.finished_at).toLocaleString() : "-"}</td>
-              </tr>
-            ))}</tbody></table>}
+          <div className="table-container">
+            <div className="table-header"><div className="table-title">
+              Задачи парсинга
+              {(jobsStatusFilter !== "all" || selectedJobs.size > 0) && (
+                <span style={{ fontSize: 13, color: "#94a3b8", marginLeft: 8 }}>
+                  ({jobsStatusFilter === "all" ? jobs.length : jobs.filter(j => j.status === jobsStatusFilter).length})
+                </span>
+              )}
+            </div></div>
+            {loading ? <div style={{ padding: 20 }}>Загрузка...</div>
+            : (jobsStatusFilter === "all" ? jobs : jobs.filter(j => j.status === jobsStatusFilter)).length === 0
+              ? <div style={{ padding: 20, color: "#94a3b8" }}>Нет задач с таким статусом.</div>
+              : <table><thead><tr>
+                <th style={{ width: 40 }}>
+                  <input type="checkbox" checked={selectedJobs.size > 0 && selectedJobs.size === (jobsStatusFilter === "all" ? jobs : jobs.filter(j => j.status === jobsStatusFilter)).length}
+                    onChange={toggleAllJobs} />
+                </th>
+                <th>ID</th><th>Источник</th><th>Режим</th><th>Статус</th><th>Обработано</th><th>Новых</th><th>Создана</th><th>Завершена</th><th style={{ width: 60 }}>Удалить</th>
+              </tr></thead>
+                <tbody>{(jobsStatusFilter === "all" ? jobs : jobs.filter(j => j.status === jobsStatusFilter)).map(j => (
+                  <tr key={j.id} style={{ opacity: selectedJobs.has(j.id) ? 1 : undefined }}>
+                    <td><input type="checkbox" checked={selectedJobs.has(j.id)} onChange={() => toggleJobSelect(j.id)} /></td>
+                    <td>#{j.id}</td><td>{j.source_title || `#${j.source_id}`}</td>
+                    <td><span style={{ fontSize: 12, background: "#1e293b", padding: "2px 6px", borderRadius: 4 }}>{j.mode}</span></td>
+                    <td>{statusBadge(j.status)}</td>
+                    <td>{j.processed_items.toLocaleString()}</td><td>{j.new_members.toLocaleString()}</td>
+                    <td style={{ fontSize: 12 }}>{new Date(j.created_at).toLocaleString()}</td>
+                    <td style={{ fontSize: 12 }}>{j.finished_at ? new Date(j.finished_at).toLocaleString() : "-"}</td>
+                    <td><button className="btn-icon" title="Удалить" onClick={() => handleDeleteJob(j.id)}>🗑️</button></td>
+                  </tr>
+                ))}</tbody></table>}
+          </div>
         </div>
       )}
 
