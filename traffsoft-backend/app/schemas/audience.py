@@ -110,6 +110,7 @@ class ParseJobList(BaseModel):
     new_members: int
     created_at: datetime
     finished_at: Optional[datetime] = None
+    error_message: Optional[str] = None
 
     class Config:
         from_attributes = True

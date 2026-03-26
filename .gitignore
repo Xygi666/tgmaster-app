@@ -14,6 +14,8 @@ traffsoft-backend/.mypy_cache/
 traffsoft-backend/.pytest_cache/
 traffsoft-backend/.coverage
 traffsoft-backend/htmlcov/
+traffsoft-backend/*.session
+traffsoft-backend/*.db
 
 # Среда / секреты
 traffsoft-backend/.env

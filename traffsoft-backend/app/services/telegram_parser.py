@@ -18,6 +18,31 @@ from app.models.audience import (
 from app.core.config import settings
 
 
+ERROR_TRANSLATIONS = {
+    "Chat admin privileges are required": "Аккаунт не является админом этого канала/группы. Нужны права администратора для чтения участников.",
+    "Chat not found": "Канал или группа не найдены. Проверьте username или ссылку.",
+    "You haven't joined this chat": "Аккаунт не состоит в этой группе/канале. Добавьте аккаунт в участники.",
+    "Invalid permissions used for the channel": "Недостаточно прав для чтения участников. Нужен админский доступ.",
+    "Privacy Prevention": "Telegram запрещает читать участников этого канала из-за настроек приватности.",
+    " FLOOD_WAIT": "Telegram заблокировал запросы на время (flood wait). Попробуйте позже.",
+    "Too many requests": "Слишком много запросов. Увеличьте задержку между запросами.",
+    "The channel must be joined": "Аккаунт не состоит в канале. Добавьте аккаунт в участники.",
+    "User not participant": "Аккаунт не является участником группы. Добавьте аккаунт в группу.",
+    "api_id is invalid": "Неверный API ID. Проверьте настройки в .env.",
+    "api_hash is invalid": "Неверный API Hash. Проверьте настройки в .env.",
+    "Phone number invalid": "Неверный номер телефона в сессии. Переавторизуйтесь.",
+    "SESSION_REVOKED": "Сессия отозвана. Запустите auth_telegram.py заново.",
+    "AuthKeyDuplicated": "Сессия используется в другом месте. Закройте другие сессии.",
+}
+
+
+def _translate_error(error: str) -> str:
+    for key, translation in ERROR_TRANSLATIONS.items():
+        if key.lower() in error.lower():
+            return translation
+    return error
+
+
 def _phone_to_country(phone: str | None) -> Optional[str]:
     if not phone:
         return None
@@ -121,7 +146,7 @@ def run_parse_job_sync(db: Session, job_id: int):
 
         except Exception as exc:
             job.status = ParseJobStatus.failed.value
-            job.error_message = str(exc)
+            job.error_message = _translate_error(str(exc))
             job.finished_at = datetime.utcnow()
             db.commit()
 

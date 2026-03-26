@@ -67,6 +67,7 @@ interface ParseJob {
   new_members: number;
   created_at: string;
   finished_at: string | null;
+  error_message: string | null;
 }
 
 interface ParseJobProgress {
@@ -389,6 +390,7 @@ function ParsingSection({ onOpenAddSource, onOpenCreateJob, onOpenStats }: { onO
   const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
   const [selectedJobs, setSelectedJobs] = useState<Set<number>>(new Set());
   const [jobsStatusFilter, setJobsStatusFilter] = useState<string>("all");
+  const [expandedJobId, setExpandedJobId] = useState<number | null>(null);
 
   const loadSources = useCallback(async () => {
     setLoading(true);
@@ -610,19 +612,32 @@ function ParsingSection({ onOpenAddSource, onOpenCreateJob, onOpenStats }: { onO
                   <input type="checkbox" checked={selectedJobs.size > 0 && selectedJobs.size === (jobsStatusFilter === "all" ? jobs : jobs.filter(j => j.status === jobsStatusFilter)).length}
                     onChange={toggleAllJobs} />
                 </th>
+                <th style={{ width: 30 }}></th>
                 <th>ID</th><th>Источник</th><th>Режим</th><th>Статус</th><th>Обработано</th><th>Новых</th><th>Создана</th><th>Завершена</th><th style={{ width: 60 }}>Удалить</th>
               </tr></thead>
                 <tbody>{(jobsStatusFilter === "all" ? jobs : jobs.filter(j => j.status === jobsStatusFilter)).map(j => (
-                  <tr key={j.id} style={{ opacity: selectedJobs.has(j.id) ? 1 : undefined }}>
-                    <td><input type="checkbox" checked={selectedJobs.has(j.id)} onChange={() => toggleJobSelect(j.id)} /></td>
-                    <td>#{j.id}</td><td>{j.source_title || `#${j.source_id}`}</td>
-                    <td><span style={{ fontSize: 12, background: "#1e293b", padding: "2px 6px", borderRadius: 4 }}>{j.mode}</span></td>
-                    <td>{statusBadge(j.status)}</td>
-                    <td>{j.processed_items.toLocaleString()}</td><td>{j.new_members.toLocaleString()}</td>
-                    <td style={{ fontSize: 12 }}>{new Date(j.created_at).toLocaleString()}</td>
-                    <td style={{ fontSize: 12 }}>{j.finished_at ? new Date(j.finished_at).toLocaleString() : "-"}</td>
-                    <td><button className="btn-icon" title="Удалить" onClick={() => handleDeleteJob(j.id)}>🗑️</button></td>
-                  </tr>
+                  <React.Fragment key={j.id}>
+                    <tr style={{ opacity: selectedJobs.has(j.id) ? 1 : undefined, cursor: j.error_message ? "pointer" : undefined }}
+                        onClick={() => j.error_message && setExpandedJobId(expandedJobId === j.id ? null : j.id)}>
+                      <td><input type="checkbox" checked={selectedJobs.has(j.id)} onChange={e => { e.stopPropagation(); toggleJobSelect(j.id); }} onClick={e => e.stopPropagation()} /></td>
+                      <td style={{ fontSize: 11, color: "#94a3b8" }}>{j.error_message ? (expandedJobId === j.id ? "▼" : "▶") : ""}</td>
+                      <td>#{j.id}</td><td>{j.source_title || `#${j.source_id}`}</td>
+                      <td><span style={{ fontSize: 12, background: "#1e293b", padding: "2px 6px", borderRadius: 4 }}>{j.mode}</span></td>
+                      <td>{statusBadge(j.status)}</td>
+                      <td>{j.processed_items.toLocaleString()}</td><td>{j.new_members.toLocaleString()}</td>
+                      <td style={{ fontSize: 12 }}>{new Date(j.created_at).toLocaleString()}</td>
+                      <td style={{ fontSize: 12 }}>{j.finished_at ? new Date(j.finished_at).toLocaleString() : "-"}</td>
+                      <td onClick={e => e.stopPropagation()}><button className="btn-icon" title="Удалить" onClick={() => handleDeleteJob(j.id)}>🗑️</button></td>
+                    </tr>
+                    {expandedJobId === j.id && j.error_message && (
+                      <tr>
+                        <td colSpan={11} style={{ background: "#1e293b", padding: "12px 16px", borderRadius: 6, margin: "4px 0" }}>
+                          <div style={{ fontSize: 13, color: "#ef4444", marginBottom: 6, fontWeight: 600 }}>Ошибка:</div>
+                          <div style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.6 }}>{j.error_message}</div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}</tbody></table>}
           </div>
         </div>

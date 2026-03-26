@@ -376,6 +376,7 @@ async def list_parse_jobs(
             new_members=job.new_members,
             created_at=job.created_at,
             finished_at=job.finished_at,
+            error_message=job.error_message,
         )
         for job, title in rows
     ]
