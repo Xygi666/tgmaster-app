@@ -82,7 +82,7 @@ def run_parse_job_sync(db: Session, job_id: int):
         db.commit()
         return
 
-    session_name = f"parser_{job_id}"
+    session_name = settings.TELEGRAM_SESSION_NAME or "tg_session"
 
     async def do_work():
         from telethon import TelegramClient
