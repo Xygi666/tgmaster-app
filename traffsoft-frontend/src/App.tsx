@@ -141,6 +141,7 @@ const App: React.FC = () => {
   const [accountsError, setAccountsError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | AccountStatus>("all");
   const [groupFilter, setGroupFilter] = useState<string>("all");
+  const allGroups = Array.from(new Set(accounts.map(a => a.group_name).filter((g): g is string => !!g)));
 
   const [newAccPhone, setNewAccPhone] = useState("");
   const [newAccName, setNewAccName] = useState("");
@@ -291,7 +292,9 @@ const App: React.FC = () => {
           <div className="form-group"><label className="form-label">Прокси (опционально)</label>
             <input className="form-input" type="text" placeholder="host:port:login:password" value={newAccProxy} onChange={(e) => setNewAccProxy(e.target.value)} /></div>
           <div className="form-group"><label className="form-label">Группа (опционально)</label>
-            <input className="form-input" type="text" placeholder="Группа 1" value={newAccGroup} onChange={(e) => setNewAccGroup(e.target.value)} /></div>
+            <input className="form-input" type="text" list="groups-list-add" placeholder="Выберите или введите новую" value={newAccGroup} onChange={(e) => setNewAccGroup(e.target.value)} />
+            {allGroups.length > 0 && <datalist id="groups-list-add">{allGroups.map(g => <option key={g} value={g} />)}</datalist>}
+          </div>
           <div className="modal-footer">
             <button className="btn btn-secondary" onClick={() => setActiveModal(null)}>Отмена</button>
             <button className="btn btn-primary" onClick={handleCreateAccount}>Добавить</button>
@@ -300,7 +303,7 @@ const App: React.FC = () => {
       )}
 
       {activeModal === "editAccount" && editingAccount && (
-        <EditAccountModal account={editingAccount} onSave={handleUpdateAccount} onClose={() => { setActiveModal(null); setEditingAccount(null); }} />
+        <EditAccountModal account={editingAccount} groups={allGroups} onSave={handleUpdateAccount} onClose={() => { setActiveModal(null); setEditingAccount(null); }} />
       )}
 
       {activeModal === "createMasslooking" && <MasslookingModal masslookingMode={masslookingMode} setMasslookingMode={setMasslookingMode} onClose={() => setActiveModal(null)} />}
@@ -924,7 +927,7 @@ const SourceStatsModal: React.FC<{ sourceId: number; onClose: () => void }> = ({
   );
 };
 
-const EditAccountModal: React.FC<{ account: Account; onSave: (id: number, payload: any) => void; onClose: () => void }> = ({ account, onSave, onClose }) => {
+const EditAccountModal: React.FC<{ account: Account; groups: string[]; onSave: (id: number, payload: any) => void; onClose: () => void }> = ({ account, groups, onSave, onClose }) => {
   const [displayName, setDisplayName] = useState(account.display_name);
   const [status, setStatus] = useState(account.status);
   const [proxy, setProxy] = useState(account.proxy || "");
@@ -961,7 +964,8 @@ const EditAccountModal: React.FC<{ account: Account; onSave: (id: number, payloa
         <div className="help-text">Оставьте пустым чтобы убрать прокси</div>
       </div>
       <div className="form-group"><label className="form-label">Группа</label>
-        <input className="form-input" type="text" placeholder="Группа 1" value={groupName} onChange={e => setGroupName(e.target.value)} />
+        <input className="form-input" type="text" list="groups-list-edit" placeholder="Выберите или введите новую" value={groupName} onChange={e => setGroupName(e.target.value)} />
+        {groups.length > 0 && <datalist id="groups-list-edit">{groups.map(g => <option key={g} value={g} />)}</datalist>}
         <div className="help-text">Оставьте пустым чтобы убрать из группы</div>
       </div>
       <div className="form-group"><label className="form-label">Лимит задач в день</label>
