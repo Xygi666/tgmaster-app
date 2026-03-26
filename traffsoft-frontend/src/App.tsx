@@ -123,6 +123,7 @@ const App: React.FC = () => {
   const [activeModal, setActiveModal] = useState<
     | null
     | "addAccount"
+    | "editAccount"
     | "createMasslooking"
     | "createInviting"
     | "createTagging"
@@ -131,6 +132,7 @@ const App: React.FC = () => {
     | "sourceStats"
     | "exportMembers"
   >(null);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
 
   const [masslookingMode, setMasslookingMode] = useState<"safe" | "balanced" | "aggressive">("balanced");
 
@@ -221,6 +223,25 @@ const App: React.FC = () => {
     } catch (e: any) { setAuthMessage(e.message); }
   };
 
+  const handleEditAccount = (account: Account) => {
+    setEditingAccount(account);
+    setActiveModal("editAccount");
+  };
+
+  const handleUpdateAccount = async (id: number, payload: any) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/accounts/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.detail); }
+      setActiveModal(null);
+      setEditingAccount(null);
+      loadAccounts();
+    } catch (e: any) { throw e; }
+  };
+
   return (
     <div className="container">
       <aside className="sidebar">
@@ -248,7 +269,8 @@ const App: React.FC = () => {
             statusFilter={statusFilter} setStatusFilter={setStatusFilter}
             groupFilter={groupFilter} setGroupFilter={setGroupFilter}
             onOpenAddAccount={() => setActiveModal("addAccount")}
-            onDeleteAccount={handleDeleteAccount} />
+            onDeleteAccount={handleDeleteAccount}
+            onEditAccount={handleEditAccount} />
         )}
         {activeSection === "masslooking" && <MasslookingSection onOpenCreate={() => setActiveModal("createMasslooking")} />}
         {activeSection === "inviting" && <InvitingSection onOpenCreate={() => setActiveModal("createInviting")} />}
@@ -275,6 +297,10 @@ const App: React.FC = () => {
             <button className="btn btn-primary" onClick={handleCreateAccount}>Добавить</button>
           </div>
         </Modal>
+      )}
+
+      {activeModal === "editAccount" && editingAccount && (
+        <EditAccountModal account={editingAccount} onSave={handleUpdateAccount} onClose={() => { setActiveModal(null); setEditingAccount(null); }} />
       )}
 
       {activeModal === "createMasslooking" && <MasslookingModal masslookingMode={masslookingMode} setMasslookingMode={setMasslookingMode} onClose={() => setActiveModal(null)} />}
@@ -344,7 +370,8 @@ const AccountsSection: React.FC<{
   statusFilter: "all" | AccountStatus; setStatusFilter: (s: "all" | AccountStatus) => void;
   groupFilter: string; setGroupFilter: (g: string) => void;
   onOpenAddAccount: () => void; onDeleteAccount: (id: number) => void;
-}> = ({ accounts, loading, error, statusFilter, setStatusFilter, groupFilter, setGroupFilter, onOpenAddAccount, onDeleteAccount }) => {
+  onEditAccount: (account: Account) => void;
+}> = ({ accounts, loading, error, statusFilter, setStatusFilter, groupFilter, setGroupFilter, onOpenAddAccount, onDeleteAccount, onEditAccount }) => {
   const statusLabel = (s: AccountStatus) => ({ active: "Активен", spam_block: "Спам-блок", banned: "Забанен" }[s] ?? s);
   const statusClass = (s: AccountStatus) => ({ active: "status-active", spam_block: "status-spam", banned: "status-banned" }[s] ?? "");
   const groups = Array.from(new Set(accounts.map(a => a.group_name).filter((g): g is string => !!g)));
@@ -371,7 +398,12 @@ const AccountsSection: React.FC<{
                 <td>{acc.phone}</td><td>{acc.display_name}</td>
                 <td><span className={`status-badge ${statusClass(acc.status)}`}>{statusLabel(acc.status)}</span></td>
                 <td>{acc.proxy || "-"}</td><td>{acc.tasks_per_day}/{acc.tasks_limit}</td><td>{acc.group_name || "-"}</td>
-                <td><button className="btn-icon" title="Удалить" onClick={() => onDeleteAccount(acc.id)}>🗑️</button></td>
+                <td>
+                  <div className="action-buttons">
+                    <button className="btn-icon" title="Редактировать" onClick={() => onEditAccount(acc)}>✏️</button>
+                    <button className="btn-icon" title="Удалить" onClick={() => onDeleteAccount(acc.id)}>🗑️</button>
+                  </div>
+                </td>
               </tr>
             ))}</tbody></table>}
       </div>
@@ -887,6 +919,57 @@ const SourceStatsModal: React.FC<{ sourceId: number; onClose: () => void }> = ({
             </div>
           ))}
         </div>
+      </div>
+    </Modal>
+  );
+};
+
+const EditAccountModal: React.FC<{ account: Account; onSave: (id: number, payload: any) => void; onClose: () => void }> = ({ account, onSave, onClose }) => {
+  const [displayName, setDisplayName] = useState(account.display_name);
+  const [status, setStatus] = useState(account.status);
+  const [proxy, setProxy] = useState(account.proxy || "");
+  const [groupName, setGroupName] = useState(account.group_name || "");
+  const [tasksLimit, setTasksLimit] = useState(account.tasks_limit);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async () => {
+    setLoading(true); setError(null);
+    try {
+      await onSave(account.id, {
+        display_name: displayName,
+        status,
+        proxy: proxy || null,
+        group_name: groupName || null,
+        tasks_limit: tasksLimit,
+      });
+    } catch (e: any) { setError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <Modal title={`Редактировать аккаунт ${account.phone}`} onClose={onClose}>
+      <div className="form-group"><label className="form-label">Отображаемое имя</label>
+        <input className="form-input" type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} /></div>
+      <div className="form-group"><label className="form-label">Статус</label>
+        <select className="form-select" value={status} onChange={e => setStatus(e.target.value)}>
+          <option value="active">Активен</option><option value="spam_block">Спам-блок</option><option value="banned">Забанен</option>
+        </select>
+      </div>
+      <div className="form-group"><label className="form-label">Прокси</label>
+        <input className="form-input" type="text" placeholder="host:port:login:password" value={proxy} onChange={e => setProxy(e.target.value)} />
+        <div className="help-text">Оставьте пустым чтобы убрать прокси</div>
+      </div>
+      <div className="form-group"><label className="form-label">Группа</label>
+        <input className="form-input" type="text" placeholder="Группа 1" value={groupName} onChange={e => setGroupName(e.target.value)} />
+        <div className="help-text">Оставьте пустым чтобы убрать из группы</div>
+      </div>
+      <div className="form-group"><label className="form-label">Лимит задач в день</label>
+        <input className="form-input" type="number" value={tasksLimit} onChange={e => setTasksLimit(Number(e.target.value))} /></div>
+      {error && <div style={{ color: "#ef4444", fontSize: 13, marginBottom: 8 }}>{error}</div>}
+      <div className="modal-footer">
+        <button className="btn btn-secondary" onClick={onClose}>Отмена</button>
+        <button className="btn btn-primary" onClick={handleSubmit} disabled={loading}>{loading ? "Сохранение..." : "Сохранить"}</button>
       </div>
     </Modal>
   );

@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.models.account import Account
-from app.schemas.account import AccountCreate, AccountRead
+from app.schemas.account import AccountCreate, AccountRead, AccountUpdate
 
 router = APIRouter()
 
@@ -38,6 +38,35 @@ async def create_account(payload: AccountCreate, db: AsyncSession = Depends(get_
         )
     account = Account(**payload.model_dump())
     db.add(account)
+    await db.commit()
+    await db.refresh(account)
+    return account
+
+
+@router.put("/{account_id}", response_model=AccountRead)
+async def update_account(
+    account_id: int,
+    payload: AccountUpdate,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Account).where(Account.id == account_id))
+    account = result.scalar_one_or_none()
+    if not account:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Аккаунт не найден")
+
+    if payload.display_name is not None:
+        account.display_name = payload.display_name
+    if payload.status is not None:
+        account.status = payload.status
+    if payload.proxy is not None:
+        account.proxy = payload.proxy if payload.proxy != "" else None
+    if payload.group_name is not None:
+        account.group_name = payload.group_name if payload.group_name != "" else None
+    if payload.tasks_per_day is not None:
+        account.tasks_per_day = payload.tasks_per_day
+    if payload.tasks_limit is not None:
+        account.tasks_limit = payload.tasks_limit
+
     await db.commit()
     await db.refresh(account)
     return account
