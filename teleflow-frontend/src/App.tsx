@@ -278,7 +278,7 @@ const App: React.FC = () => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [token, setToken] = useState<string | null>(null);
+  const [_token, setToken] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [authMessage, setAuthMessage] = useState<string | null>(null);
 
@@ -553,7 +553,7 @@ const DashboardSection: React.FC = () => {
           <table>
             <thead><tr><th>Название</th><th>Участников</th></tr></thead>
             <tbody>
-              {analytics.top_sources.map((s, i) => <tr key={i}><td>{s.Title || "-"}</td><td>{(s.members as number).toLocaleString()}</td></tr>)}
+              {analytics.top_sources.map((s, i) => <tr key={i}><td>{s.title || "-"}</td><td>{(s.members as number).toLocaleString()}</td></tr>)}
             </tbody>
           </table>
         ) : <div style={{ padding: 20, color: "#94a3b8" }}>Пока нет данных — запустите парсинг</div>}
@@ -1148,7 +1148,7 @@ const EditAccountModal: React.FC<{ account: Account; groups: string[]; onSave: (
       <div className="form-group"><label className="form-label">Отображаемое имя</label>
         <input className="form-input" type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} /></div>
       <div className="form-group"><label className="form-label">Статус</label>
-        <select className="form-select" value={status} onChange={e => setStatus(e.target.value)}>
+        <select className="form-select" value={status} onChange={e => setStatus(e.target.value as "active" | "spam_block" | "banned")}>
           <option value="active">Активен</option><option value="spam_block">Спам-блок</option><option value="banned">Забанен</option>
         </select>
       </div>
@@ -2287,7 +2287,7 @@ const TaggingModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         </div>
         <div className="form-group"><label className="form-label">Текст сообщения</label>
           <input className="form-input" placeholder="Привет! {username}" value={template} onChange={e => setTemplate(e.target.value)} />
-          <div className="help-text">{username} заменится на @username каждого пользователя. Сообщение отправляется в чат с @mention.</div>
+          <div className="help-text">{`{username}`} заменится на @username каждого пользователя. Сообщение отправляется в чат с @mention.</div>
         </div>
         <div className="form-group"><label className="form-label">Источник аудитории</label>
           <select className="form-select" value={sourceType} onChange={e => setSourceType(e.target.value as any)}>
