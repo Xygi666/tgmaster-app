@@ -146,17 +146,7 @@ interface MasslookingJob {
   error_message: string | null;
 }
 
-interface MasslookingProgress {
-  id: number;
-  status: string;
-  processed_users: number;
-  total_users: number;
-  stories_watched: number;
-  users_with_stories: number;
-  users_skipped: number;
-  errors_count: number;
-  error_message: string | null;
-}
+
 
 interface MasslookingStats {
   total_jobs: number;
@@ -477,7 +467,7 @@ const App: React.FC = () => {
         {activeSection === "parsing" && <ParsingSection onOpenAddSource={() => setActiveModal("addSource")} onOpenCreateJob={() => setActiveModal("createParseJob")} onOpenStats={(id) => { (window as any).__statsSourceId = id; setActiveModal("sourceStats"); }} />}
         {activeSection === "settings" && (
           <SettingsSection email={email} setEmail={setEmail} password={password} setPassword={setPassword}
-            token={token} currentUser={currentUser} authMessage={authMessage}
+            currentUser={currentUser} authMessage={authMessage}
             onRegister={handleRegister} onLogin={handleLogin} onLogout={handleLogout} />
         )}
         {activeSection === "users" && currentUser?.role === "admin" && (
@@ -1091,7 +1081,6 @@ const SourceStatsModal: React.FC<{ sourceId: number; onClose: () => void }> = ({
 
   if (!stats) return <Modal title="Статистика источника" onClose={onClose}><div style={{ padding: 20, color: "#ef4444" }}>Ошибка загрузки</div></Modal>;
 
-  const total = stats.total_members || 1;
   return (
     <Modal title={`Статистика источника #${sourceId}`} onClose={onClose}>
       <div className="stats-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 16 }}>
@@ -1655,13 +1644,12 @@ function TaggingSection({ onOpenCreate }: { onOpenCreate: () => void }) {
 const SettingsSection: React.FC<{
   email: string; setEmail: (v: string) => void;
   password: string; setPassword: (v: string) => void;
-  token: string | null;
   currentUser: AppUser | null;
   authMessage: string | null;
   onRegister: () => void;
   onLogin: (rememberMe: boolean) => void;
   onLogout: () => void;
-}> = ({ email, setEmail, password, setPassword, token, currentUser, authMessage, onRegister, onLogin, onLogout }) => {
+}> = ({ email, setEmail, password, setPassword, currentUser, authMessage, onRegister, onLogin, onLogout }) => {
   const [rememberMe, setRememberMe] = useState(false);
 
   return (
