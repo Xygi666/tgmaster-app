@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
-BACKEND="traffsoft-backend"
-FRONTEND="traffsoft-frontend"
+BACKEND="teleflow-backend"
+FRONTEND="teleflow-frontend"
 
-echo "===> Запускаю backend..."
+echo "===> TeleFlow: запускаю backend..."
 cd "$BACKEND"
 
 if [ -d "venv/Scripts" ]; then

@@ -6,14 +6,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY traffsoft-frontend/package*.json ./traffsoft-frontend/
-RUN cd traffsoft-frontend && npm install
+COPY teleflow-frontend/package*.json ./teleflow-frontend/
+RUN cd teleflow-frontend && npm install
 
-COPY traffsoft-frontend/ ./traffsoft-frontend/
+COPY teleflow-frontend/ ./teleflow-frontend/
 
-RUN cd traffsoft-frontend && npm run build
+RUN cd teleflow-frontend && npm run build
 
-COPY traffsoft-backend/ .
+COPY teleflow-backend/ .
 
 RUN pip install --no-cache-dir -r requirements.txt
 

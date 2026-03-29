@@ -1,8 +1,8 @@
 $rootPath     = "G:\projects\traffsoft"
-$backendPath  = Join-Path $rootPath "traffsoft-backend"
-$frontendPath = Join-Path $rootPath "traffsoft-frontend"
+$backendPath  = Join-Path $rootPath "teleflow-backend"
+$frontendPath = Join-Path $rootPath "teleflow-frontend"
 
-Write-Host "=== Запускаю TraffSoft ===" -ForegroundColor Cyan
+Write-Host "=== Запускаю TeleFlow ===" -ForegroundColor Cyan
 
 # --- BACKEND ---
 Write-Host "-> Запуск backend..." -ForegroundColor Yellow

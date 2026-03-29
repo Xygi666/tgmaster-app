@@ -6,28 +6,28 @@
 *.swp
 
 # --- Python / backend ---
-traffsoft-backend/__pycache__/
-traffsoft-backend/**/__pycache__/
-traffsoft-backend/*.py[cod]
-traffsoft-backend/venv/
-traffsoft-backend/.mypy_cache/
-traffsoft-backend/.pytest_cache/
-traffsoft-backend/.coverage
-traffsoft-backend/htmlcov/
-traffsoft-backend/*.session
-traffsoft-backend/*.db
+teleflow-backend/__pycache__/
+teleflow-backend/**/__pycache__/
+teleflow-backend/*.py[cod]
+teleflow-backend/venv/
+teleflow-backend/.mypy_cache/
+teleflow-backend/.pytest_cache/
+teleflow-backend/.coverage
+teleflow-backend/htmlcov/
+teleflow-backend/*.session
+teleflow-backend/*.db
 
 # Среда / секреты
-traffsoft-backend/.env
-traffsoft-backend/.env.*
+teleflow-backend/.env
+teleflow-backend/.env.*
 
 # --- Node / frontend ---
-traffsoft-frontend/node_modules/
-traffsoft-frontend/dist/
-traffsoft-frontend/.npm/
-traffsoft-frontend/.cache/
-traffsoft-frontend/.env
-traffsoft-frontend/.env.*
+teleflow-frontend/node_modules/
+teleflow-frontend/dist/
+teleflow-frontend/.npm/
+teleflow-frontend/.cache/
+teleflow-frontend/.env
+teleflow-frontend/.env.*
 
 # --- OS ---
 .DS_Store

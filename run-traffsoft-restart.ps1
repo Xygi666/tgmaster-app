@@ -1,8 +1,8 @@
 $rootPath     = "G:\projects\traffsoft"
-$backendPath  = Join-Path $rootPath "traffsoft-backend"
-$frontendPath = Join-Path $rootPath "traffsoft-frontend"
+$backendPath  = Join-Path $rootPath "teleflow-backend"
+$frontendPath = Join-Path $rootPath "teleflow-frontend"
 
-Write-Host "=== Рестарт TraffSoft ===" -ForegroundColor Cyan
+Write-Host "=== Рестарт TeleFlow ===" -ForegroundColor Cyan
 
 # --- ОСТАНОВКА СТАРЫХ ПРОЦЕССОВ ---
 Write-Host "-> Останавливаю старые процессы uvicorn и node..." -ForegroundColor Yellow
