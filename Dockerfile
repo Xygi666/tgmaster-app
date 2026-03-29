@@ -4,6 +4,11 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    gnupg \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 COPY teleflow-frontend/package*.json ./teleflow-frontend/
@@ -18,7 +23,6 @@ COPY teleflow-backend/ .
 RUN pip install --no-cache-dir -r requirements.txt
 
 ENV PYTHONUNBUFFERED=1
-ENV DATABASE_URL=postgresql://placeholder
 
 EXPOSE 8000
 
